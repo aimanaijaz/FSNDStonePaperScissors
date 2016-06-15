@@ -140,6 +140,37 @@ class StonePaperScissorsApi(remote.Service):
             raise endpoints.NotFoundException('A User with that name does not exist!')
         scores = Score.query(Score.user == user.key)
         return ScoreForms(items=[score.to_form() for score in scores])
+
+    @endpoints.method(request_message=USER_REQUEST,
+                      response_message=GameForms,
+                      path='user/usergames',
+                      name='get_user_games',
+                      http_method='GET')
+    def get_user_games(self, request):
+        """Returns all active games"""
+        user = User.query(User.name == request.user_name).get()
+        if not user:
+          raise endpoints.NotFoundException('A user with that name does not exist!')
+        games = Game.query(Game.user == user.key)\
+                .filter(Game.game_over == False)
+        return GameForms(items=[game.to_form("Active game") for game in games])
+
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=StringMessage,
+                      path='game/{urlsafe_game_key}/cancelgame',
+                      name='cancel_game',
+                      http_method='DELETE')
+    def cancel_game(self, request):
+        """Deletes unfinished games."""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if game:
+            if game.game_over:
+                raise endpoints.ConflictException('Game already over. Completed games cannot be deleted!')
+            else:
+                game.key.delete()
+                return StringMessage(message='Game {} cancelled!'.format(request.urlsafe_game_key))
+        else:
+              raise endpoints.NotFoundException('Game does not Exist!')
      
 
 api = endpoints.api_server([StonePaperScissorsApi])
