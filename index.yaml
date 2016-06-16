@@ -15,3 +15,13 @@ indexes:
   - name: game_over
   - name: user
 
+- kind: Score
+  properties:
+  - name: won
+  - name: game_score
+
+- kind: Score
+  properties:
+  - name: won
+  - name: game_score
+    direction: desc

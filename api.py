@@ -90,21 +90,24 @@ class StonePaperScissorsApi(remote.Service):
         # Make sure that User play is valid
         if not request.play in VALID_MOVES:
           raise endpoints.BadRequestException("Invalid Move")
-        # Check conditions to win the round. If user wins the round increments his points 
+        # Check conditions to win the round. If user wins the round increments his points and append move to game history
         if ((request.play == "paper" and game.ai_move == "stone") or 
             (request.play == "stone" and game.ai_move == "scissors") or
             (request.play == "scissors" and game.ai_move == "paper"))  :
             msg = '{} beats {} . You win this round!'.format(request.play, game.ai_move)
             game.points += 1
-        # Check if there is a tie. If there is a tie ask the user to play this round again 
+            game.history.append(("You Played: {}".format(request.play), "AI Played: {}".format(game.ai_move), "You Won"))
+        # Check if there is a tie. If there is a tie ask the user to play this round again and append move to game history
         elif((request.play == "paper" and game.ai_move == "paper") or 
             (request.play == "stone" and game.ai_move == "stone") or
             (request.play == "scissors" and game.ai_move == "scissors")):
             game.rounds_remaining += 1
             msg = 'Its a tie. Play again'
-        # If above conditions are not met the user loses the round
+            game.history.append(("You Played: {}".format(request.play), "AI Played: {}".format(game.ai_move), "Its a Tie"))
+        # If above conditions are not met the user loses the round. Append this move to game history
         else:
             msg = '{} beats {}. You lost this round.'.format(game.ai_move, request.play)
+            game.history.append(("You Played: {}".format(request.play), "AI Played: {}".format(game.ai_move), "You Lost"))
 
         if game.rounds_remaining < 1:
             # User wins the game if he/she wins more than half the rounds. For example if there are 10 rounds user should win more than 5 rounds to win the game
@@ -140,6 +143,27 @@ class StonePaperScissorsApi(remote.Service):
             raise endpoints.NotFoundException('A User with that name does not exist!')
         scores = Score.query(Score.user == user.key)
         return ScoreForms(items=[score.to_form() for score in scores])
+
+    @endpoints.method(response_message=ScoreForms,
+                      path='highscore',
+                      name='get_high_scores',
+                      http_method='GET')
+    def get_high_scores(self, request):
+        """Return scores in descending order"""
+        Scores =Score.query(Score.won == True).order(-Score.game_score)
+        return ScoreForms(items=[score.to_form() for score in Scores])
+
+    @endpoints.method(request_message=GET_GAME_REQUEST,
+                      response_message=StringMessage,
+                      path='game/{urlsafe_game_key}/gamehistory',
+                      name='get_game_history',
+                      http_method='GET')
+    def get_game_history(self, request):
+        """Returns a history of all moves for a game"""
+        game = get_by_urlsafe(request.urlsafe_game_key, Game)
+        if not game:
+          raise endpoints.NotFoundException('Game not found!')
+        return StringMessage(message=str(game.history))
 
     @endpoints.method(request_message=USER_REQUEST,
                       response_message=GameForms,

@@ -31,6 +31,7 @@ class Game(ndb.Model):
                     ai_move="",
                     rounds_allowed=rounds,
                     rounds_remaining=rounds,
+                    history = [],
                     points=0,
                     game_over=False)
         game.put()
