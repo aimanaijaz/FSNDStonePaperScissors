@@ -23,6 +23,8 @@ USER_REQUEST = endpoints.ResourceContainer(user_name=messages.StringField(1),
                                            email=messages.StringField(2))
 VALID_MOVES = ['stone', 'paper', 'scissors']
 
+MEMCACHE_UNFINISHED_GAMES = 'UNFINISHED_GAMES'
+
 @endpoints.api(name='stone_paper_scissors', version='v1')
 class StonePaperScissorsApi(remote.Service):
     """Game API"""
@@ -53,6 +55,8 @@ class StonePaperScissorsApi(remote.Service):
             raise endpoints.NotFoundException(
                     'A User with that name does not exist!')
         game = Game.new_game(user.key,request.rounds)
+
+        taskqueue.add(url='/tasks/cache_unfinished_games')
         return game.to_form('Good luck playing Stone Paper Scissors!')
 
     @endpoints.method(request_message=GET_GAME_REQUEST,
@@ -64,7 +68,7 @@ class StonePaperScissorsApi(remote.Service):
         """Return the current game state."""
         game = get_by_urlsafe(request.urlsafe_game_key, Game)
         if game:
-            return game.to_form('Time to make a move!')
+            return game.to_form('Here is some game info!')
         else:
             raise endpoints.NotFoundException('Game not found!')
 
@@ -207,6 +211,23 @@ class StonePaperScissorsApi(remote.Service):
                 return StringMessage(message='Game {} cancelled!'.format(request.urlsafe_game_key))
         else:
               raise endpoints.NotFoundException('Game does not Exist!')
+
+    @endpoints.method(response_message=StringMessage,
+                      path='games/unfinished_games',
+                      name='get_unfinished_games',
+                      http_method='GET')
+    def get_unfinished_games(self, request):
+        """Get the cached unfinished games"""
+        return StringMessage(message=memcache.get(MEMCACHE_UNFINISHED_GAMES) or '')
+
+    @staticmethod
+    def _cache_unfinished_games():
+        """Populates memcache with the number of unfinished games"""
+        games = Game.query(Game.game_over == False).fetch()
+        if games:
+            count = len(games)
+            memcache.set(MEMCACHE_UNFINISHED_GAMES,
+                         'The total unfinished games remaining is {}'.format(count))
      
 
 api = endpoints.api_server([StonePaperScissorsApi])
