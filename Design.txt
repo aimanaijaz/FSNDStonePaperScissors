@@ -1,0 +1,27 @@
+What additional properties did you add to your models and why?
+
+User Model(additional properties)
+    wins(IntegerProperty) - This property was added to keep track of the number of games won by the user.
+    total_played(IntegerProperty) - total_played records the total number of games played by the user. 
+    win_ratio(FloatProperty) - This property keeps track of the win_ratio of the user. [win_ratio = wins/total_played]
+
+Game Model(additional properties)
+    ai_move(StringProperty) - ai_move was added to store the 2nd player's move [AI] in the game.   
+    points(IntegerProperty) - to store the user's points after each round.(helps in deciding the winner of the game)    
+    history(PickleProperty) -  to store game history i.e all the moves in a game (PickleProperty help to store a python list)   
+    rounds_allowed(IntegerProperty) - to store the number of rounds allowed in the game.   
+    rounds_remaining(IntegerProperty) - to store the number of rounds remaining in the game.   
+   
+Score Model(additional properties)
+    game_score(IntegerProperty) - to record the user's score.
+
+What were some of the trade-offs or struggles you faced when implementing the new game logic?
+- PickleProperty
+  The get_game_history function required the output in the form of a list. Modeling the "history" property of the Game Model was a difficult design decision for me.
+  I had no clue what datatype to use for accepting a list. After some googling I thankfully found out about PickleProperty and modelled the history property as a PickleProperty
+- Using attrgetter in get_user_rankings
+  Sorting the user's based on win_ratio was a challenge to me. This link https://wiki.python.org/moin/HowTo/Sorting helped me understand the
+  various sorting techniques in python. I later realized that this sorting could be done by using filters as well. 
+-  Accepting case insensitve input from user and Random generation of AI moves
+  Being relatively new to python, I had to do a little research on python strings and arrays to accept case insensitive input from the user and to randomly generate AI moves.
+
