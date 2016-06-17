@@ -3,12 +3,13 @@ import random
 import logging
 import endpoints
 # Used for sorting
+from operator import itemgetter, attrgetter, methodcaller
 from protorpc import remote, messages
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 
 from models import User, Game, Score
-from models import StringMessage, NewGameForm, GameForm, GameForms, MakeMoveForm, ScoreForms
+from models import StringMessage, NewGameForm, GameForm, GameForms, MakeMoveForm, ScoreForms, UserRankingForm, UserRankingForms
 from utils import get_by_urlsafe
 
 NEW_GAME_REQUEST = endpoints.ResourceContainer(NewGameForm)
@@ -152,6 +153,17 @@ class StonePaperScissorsApi(remote.Service):
         """Return scores in descending order"""
         Scores =Score.query(Score.won == True).order(-Score.game_score)
         return ScoreForms(items=[score.to_form() for score in Scores])
+
+    @endpoints.method(response_message=UserRankingForms,
+                      path='user/userrankings',
+                      name='get_user_rankings',
+                      http_method='GET')
+    def get_user_rankings(self, request):
+        """Returns user's user_rankings based on win ratios"""
+        allusers =User.query(User.total_played > 0).fetch()
+        # Sorting using attrgetter. Reference https://wiki.python.org/moin/HowTo/Sorting
+        allusers = sorted(allusers, key=attrgetter('win_ratio'), reverse=True)
+        return UserRankingForms(items=[user.to_form() for user in allusers])
 
     @endpoints.method(request_message=GET_GAME_REQUEST,
                       response_message=StringMessage,

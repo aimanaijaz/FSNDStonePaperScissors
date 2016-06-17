@@ -12,6 +12,35 @@ class User(ndb.Model):
     """User profile"""
     name = ndb.StringProperty(required=True)
     email =ndb.StringProperty()
+    wins = ndb.IntegerProperty(default=0)
+    total_played = ndb.IntegerProperty(default=0)
+    win_ratio  = ndb.FloatProperty()
+
+    @property
+    def win_ratio(self):
+        """calculates win ratio"""
+        if self.total_played >0:
+            return float(self.wins)/float(self.total_played)
+        else:
+            return 0
+         
+    def to_form(self):
+        """ Returns a form representation of the user rankings """
+        return UserRankingForm(name=self.name,
+                               wins=self.wins,
+                               total_played=self.total_played,
+                               win_ratio= self.win_ratio)
+
+    def record_win(self):
+        """increments the total number of games played and wins and saves this info"""
+        self.total_played = self.total_played + 1
+        self.wins = self.wins + 1
+        self.put()
+
+    def record_loss(self):
+        """ increments the total number of games of played and saves this info"""
+        self.total_played = self.total_played + 1
+        self.put()
  
 class Game(ndb.Model):
     """Game object"""
@@ -57,6 +86,10 @@ class Game(ndb.Model):
         # Add the game to the score 'board'
         score = Score(user=self.user, date=date.today(), won=won, game_score = self.points)
         score.put()
+        if won == True:
+            self.user.get().record_win()
+        elif won == False:
+            self.user.get().record_loss()
 
 class Score(ndb.Model):
     """Score object"""
@@ -83,6 +116,17 @@ class GameForm(messages.Message):
 class GameForms(messages.Message):
     """Return multiple GameForms"""
     items = messages.MessageField(GameForm, 1, repeated=True)
+
+class UserRankingForm(messages.Message):
+    """User Ranking Form"""
+    name = messages.StringField(1, required=True)
+    wins = messages.IntegerField(2, required=True)
+    total_played = messages.IntegerField(3, required=True)
+    win_ratio = messages.FloatField(4, required=True)
+
+class UserRankingForms(messages.Message):
+    """Return multiple User Forms """
+    items = messages.MessageField(UserRankingForm, 1, repeated=True)
 
 class NewGameForm(messages.Message):
     """Used to create a new game"""
