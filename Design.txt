@@ -23,5 +23,5 @@ What were some of the trade-offs or struggles you faced when implementing the ne
   Sorting the user's based on win_ratio was a challenge to me. This link https://wiki.python.org/moin/HowTo/Sorting helped me understand the
   various sorting techniques in python. I later realized that this sorting could be done by using filters as well. 
 -  Accepting case insensitve input from user and Random generation of AI moves
-  Being relatively new to python, I had to do a little research on python strings and arrays to accept case insensitive input from the user and to randomly generate AI moves.
+   I had to do a little research on python strings and arrays to accept case insensitive input from the user and to randomly generate AI moves.
 
